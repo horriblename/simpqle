@@ -15,6 +15,7 @@ func pErrorf(format string, args ...interface{}) {
 }
 
 func Start() {
+	table := &sql.Table{}
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		print(prompt)
@@ -34,7 +35,7 @@ func Start() {
 			return
 		}
 
-		if input[0] == '.' {
+		if len(input) >= 1 && input[0] == '.' {
 			handleCmd(input)
 		} else {
 			stmt, err := sql.PrepareStmt(input)
@@ -43,7 +44,10 @@ func Start() {
 				continue
 			}
 
-			sql.ExecuteStmt(stmt)
+			err = table.ExecuteStmt(&stmt)
+			if err != nil {
+				pErrorf("Error: %s", err)
+			}
 		}
 	}
 }
