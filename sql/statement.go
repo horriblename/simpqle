@@ -2,7 +2,6 @@ package sql
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -41,7 +40,7 @@ const (
 const (
 	gColumnUsernameSize uint64 = 32
 	gColumnEmailSize    uint64 = 255
-	gRowSize            uint64 = 8 /* int64 */ + gColumnUsernameSize + gColumnEmailSize
+	gRowSize            uint64 = 8 /* sizeOf(uint64) */ + gColumnUsernameSize + gColumnEmailSize
 
 	// virtual memory system of most computer architectures use page size of 4kB?
 	gPageSize      uint64 = 4096
@@ -101,32 +100,6 @@ func PrepareStmt(input string) (stmt Stmt, err error) {
 }
 
 func (row *Row) Serialize() (b []byte, err error) {
-	buf := bytes.NewBuffer([]byte{})
-	err = binary.Write(buf, binary.BigEndian, row.Id)
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Write(buf, binary.BigEndian, colUsername(row.Username))
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Write(buf, binary.BigEndian, byte(0))
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Write(buf, binary.BigEndian, colEmail(row.Email))
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Write(buf, binary.BigEndian, byte(0))
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func (row *Row) GobSer() (b []byte, err error) {
 	buf := bytes.Buffer{}
 	enc := gob.NewEncoder(&buf)
 	err = enc.Encode(row)
