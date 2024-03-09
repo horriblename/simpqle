@@ -3,6 +3,7 @@ package repl
 import (
 	"bufio"
 	"fmt"
+	sql "github.com/horriblename/simpqle/sql"
 	"log"
 	"os"
 )
@@ -20,6 +21,7 @@ func Start() {
 		if scanned := scanner.Scan(); !scanned {
 			if err := scanner.Err(); err != nil {
 				log.Println(err)
+				continue
 			} else {
 				// EOF
 				break
@@ -35,7 +37,13 @@ func Start() {
 		if input[0] == '.' {
 			handleCmd(input)
 		} else {
-			println(scanner.Text())
+			stmt, err := sql.PrepareStmt(input)
+			if err != nil {
+				pErrorf("Error Parsing Statement: %s", err)
+				continue
+			}
+
+			sql.ExecuteStmt(stmt)
 		}
 	}
 }
