@@ -212,8 +212,7 @@ func pagerOpen(fname string) (*Pager, error) {
 
 func (pager *Pager) getPage(pageNum uint64) (unsafe.Pointer, error) {
 	if pageNum > gTableMaxPages {
-		fmt.Fprintf(os.Stderr, "Tried to fetch page number out of bounds. %d > %d\n", pageNum, gTableMaxPages)
-		os.Exit(1)
+		return nil, fmt.Errorf("Tried to fetch page number out of bounds. %d > %d", pageNum, gTableMaxPages)
 	}
 
 	if pager.pages[pageNum] == nil {
