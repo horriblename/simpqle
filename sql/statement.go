@@ -48,7 +48,6 @@ var (
 	ErrInsertOversizedColumn = errors.New("inserted column too large")
 
 	ErrUnknownStmt = errors.New("unknown statement")
-	ErrTableFull   = errors.New("table is full")
 )
 
 func PrepareStmt(input string) (stmt Stmt, err error) {

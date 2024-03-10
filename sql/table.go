@@ -3,7 +3,6 @@ package sql
 import (
 	"errors"
 	"fmt"
-	"unsafe"
 )
 
 type Table struct {
@@ -13,30 +12,21 @@ type Table struct {
 
 var ErrTableFull = errors.New("table is full")
 
-func rowSlot(table *Table, rowNum uint64) (unsafe.Pointer, error) {
-	pageNum := rowNum / gRowsPerPage
-	page, err := table.pager.getPage(pageNum)
-	if err != nil {
-		return nil, err
-	}
-
-	rowOffset := rowNum % gRowsPerPage
-	byteOffset := rowOffset * gRowSize
-	return unsafe.Pointer(uintptr(unsafe.Pointer(page)) + uintptr(byteOffset)), nil
-}
-
 func (table *Table) ExecuteInsert(stmt *Stmt) error {
 	if table.NumRows >= gTableMaxRows {
 		return ErrTableFull
 	}
 
 	rowToInsert := stmt.RowToInsert
+	cursor := TableEnd(table)
 
-	rowPtr, err := rowSlot(table, table.NumRows)
+	row, err := cursor.Value()
 	if err != nil {
 		return err
 	}
-	*(*Row)(rowPtr) = *rowToInsert
+
+	// TODO: Serialize row and write to the Row struct
+	*row = *rowToInsert
 
 	table.NumRows += 1
 
@@ -44,12 +34,14 @@ func (table *Table) ExecuteInsert(stmt *Stmt) error {
 }
 
 func (t *Table) ExecuteSelect(stmt *Stmt) error {
-	for i := uint64(0); i < t.NumRows; i++ {
-		row, err := rowSlot(t, i)
+	cursor := TableStart(t)
+	for !cursor.endOfTable {
+		row, err := cursor.Value()
 		if err != nil {
 			return err
 		}
-		printRow((*Row)(row))
+		printRow(row)
+		cursor.Advance()
 	}
 
 	return nil
