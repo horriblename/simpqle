@@ -280,12 +280,13 @@ func (table *Table) Close() error {
 	return nil
 }
 
+// flushes the selected page in memory into the database file
 func (pager *Pager) flush(pageNum uint64, size uint64) error {
 	if pager.pages[pageNum] == nil {
 		return errors.New("Tried to flush null page")
 	}
 
-	_, err := pager.file.Seek(int64(pageNum*gPageSize), io.SeekCurrent)
+	_, err := pager.file.Seek(int64(pageNum*gPageSize), io.SeekStart)
 	if err != nil {
 		return fmt.Errorf("Error seeking: %s", err)
 	}
