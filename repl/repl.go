@@ -14,8 +14,13 @@ func pErrorf(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, args...)
 }
 
-func Start() {
-	table := &sql.Table{}
+func Start(dbFilePath string) {
+	table, err := sql.DbOpen(dbFilePath)
+	if err != nil {
+		panic(fmt.Sprintf("Error opening DB: %s", err))
+	}
+	defer table.Close()
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		print(prompt)
