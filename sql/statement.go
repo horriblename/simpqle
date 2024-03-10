@@ -129,7 +129,7 @@ func rowSlot(table *Table, rowNum uint64) (unsafe.Pointer, error) {
 	}
 
 	rowOffset := rowNum % gRowsPerPage
-	byteOffset := rowOffset % gRowSize
+	byteOffset := rowOffset * gRowSize
 	return unsafe.Pointer(uintptr(unsafe.Pointer(page)) + uintptr(byteOffset)), nil
 }
 
