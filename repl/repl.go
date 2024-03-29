@@ -11,7 +11,7 @@ import (
 const prompt string = "> "
 
 func pErrorf(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, args...)
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
 }
 
 func Start(dbFilePath string) {
