@@ -6,17 +6,14 @@ import (
 )
 
 type Table struct {
-	NumRows uint64
-	pager   *Pager
+	NumRows     uint64
+	RootPageNum uint64
+	pager       *Pager
 }
 
 var ErrTableFull = errors.New("table is full")
 
 func (table *Table) ExecuteInsert(stmt *Stmt) error {
-	if table.NumRows >= gTableMaxRows {
-		return ErrTableFull
-	}
-
 	rowToInsert := stmt.RowToInsert
 	cursor := TableEnd(table)
 
@@ -34,14 +31,20 @@ func (table *Table) ExecuteInsert(stmt *Stmt) error {
 }
 
 func (t *Table) ExecuteSelect(stmt *Stmt) error {
-	cursor := TableStart(t)
+	cursor, err := TableStart(t)
+	if err != nil {
+		return err
+	}
+
 	for !cursor.endOfTable {
 		row, err := cursor.Value()
 		if err != nil {
 			return err
 		}
 		printRow(row)
-		cursor.Advance()
+		if err := cursor.Advance(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -77,25 +80,13 @@ func DbOpen(fname string) (*Table, error) {
 // 3. frees the memory for the Pager and Table data structure (if we're in C lmao)
 func (table *Table) Close() error {
 	pager := table.pager
-	numFullPages := table.NumRows / gRowsPerPage
 
 	for i, page := range pager.pages {
 		if page == nil {
 			continue
 		}
 
-		pager.flush(uint64(i), gPageSize)
-	}
-
-	// There may be a partial page to write to the end of the file
-	// This should not be needed after we switch to a B-tree
-	numAdditionalRows := table.NumRows % gRowsPerPage
-	if numAdditionalRows > 0 {
-		pageNum := numFullPages
-		if pager.pages[pageNum] != nil {
-			pager.flush(pageNum, numAdditionalRows*gRowSize)
-			pager.pages[pageNum] = nil
-		}
+		pager.flush(uint64(i))
 	}
 
 	if err := pager.file.Close(); err != nil {

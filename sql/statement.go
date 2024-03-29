@@ -1,10 +1,8 @@
 package sql
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 )
 
@@ -37,9 +35,6 @@ const (
 	// virtual memory system of most computer architectures use page size of 4kB?
 	gPageSize      uint64 = 4096
 	gTableMaxPages uint64 = 100
-
-	gRowsPerPage  uint64 = gPageSize / gRowSize
-	gTableMaxRows uint64 = gRowsPerPage * gTableMaxPages
 )
 
 var (
@@ -88,16 +83,6 @@ func PrepareStmt(input string) (stmt Stmt, err error) {
 	}
 
 	return Stmt{}, ErrUnknownStmt
-}
-
-func (row *Row) Serialize(w io.Writer) error {
-	return binary.Write(w, binary.BigEndian, row)
-}
-
-func Deserialize(r io.Reader) (Row, error) {
-	row := Row{}
-	err := binary.Read(r, binary.BigEndian, &row)
-	return row, err
 }
 
 func printRow(row *Row) {
