@@ -19,7 +19,12 @@ func Start(dbFilePath string) {
 	if err != nil {
 		panic(fmt.Sprintf("Error opening DB: %s", err))
 	}
-	defer table.Close()
+	defer func() {
+		err := table.Close()
+		if err != nil {
+			pErrorf("error closing database: %s", err)
+		}
+	}()
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
