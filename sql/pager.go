@@ -10,8 +10,6 @@ import (
 	"github.com/horriblename/simpqle/sql/bptree"
 )
 
-type Page [gPageSize]byte
-
 type Pager struct {
 	file     *os.File
 	fileLen  uint64
