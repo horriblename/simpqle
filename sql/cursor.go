@@ -96,6 +96,30 @@ func (cursor *Cursor) Value() (*Row, error) {
 	return leaf.LeafNodeCell(0), nil
 }
 
+func (cursor *Cursor) leafNodeInsert(key uint64, value *Row) error {
+	node, err := cursor.table.pager.getPage(cursor.pageNum)
+	if err != nil {
+		return err
+	}
+
+	numCells := node.node.NumCells()
+	if numCells >= bptree.LeafNodeMaxCells {
+		// Node full
+		panic("unimplemented: leaf node full")
+	}
+
+	leaf, err := asLeaf(node.node.Variant)
+	if err != nil {
+		return err
+	}
+
+	leaf.Insert(int(cursor.cellNum), key, *value)
+	cursor.cellNum += 1
+
+	node.node.SerializeBinary(cursor.table.pager.file)
+	return nil
+}
+
 func asLeaf(variant bptree.NodeVariant) (*bptree.LeafNode[uint64, Row], error) {
 	if variant == nil {
 		return nil, bptree.ErrNilVariant

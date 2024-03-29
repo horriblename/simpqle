@@ -33,7 +33,7 @@ const (
 )
 
 const (
-	gNodeNumCells = 3
+	LeafNodeMaxCells = uint64(3)
 )
 
 type NodeVariant interface{ node() }
@@ -65,8 +65,19 @@ func NewRootNode[K comparable, V any]() Node[K, V] {
 		IsRoot: true,
 		Parent: 0,
 		Variant: &LeafNode[K, V]{
-			NumCells: gNodeNumCells,
+			NumCells: LeafNodeMaxCells,
 		},
+	}
+}
+
+func (node *Node[K, V]) NumCells() uint64 {
+	switch variant := node.Variant.(type) {
+	case *LeafNode[K, V]:
+		return variant.NumCells
+	case *InternalNode[K, V]:
+		panic("unimplemented: NumCells for internal node")
+	default:
+		panic(ErrUnknownVariant)
 	}
 }
 
@@ -76,4 +87,17 @@ func (leaf *LeafNode[K, V]) LeafNodeCell(cellNum uint64) *V {
 	}
 
 	return &leaf.Pairs[cellNum].Value
+}
+
+func (leaf *LeafNode[K, V]) Insert(cellNum int, key K, value V) error {
+	// if cellNum <  {
+	// 	cell := KVPair[K, V]{
+	// 		Key:   key,
+	// 		Value: value,
+	// 	}
+	// 	slices.Insert(leaf.Pairs[:], cellNum, cell)
+	// 	return
+	// }
+	panic("unimplemented")
+
 }

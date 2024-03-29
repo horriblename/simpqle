@@ -15,16 +15,23 @@ type Table struct {
 var ErrTableFull = errors.New("table is full")
 
 func (table *Table) ExecuteInsert(stmt *Stmt) error {
-	rowToInsert := stmt.RowToInsert
-	cursor := TableEnd(table)
-
-	row, err := cursor.Value()
+	// FIXME: single node tree
+	node, err := table.pager.getPage(table.RootPageNum)
 	if err != nil {
 		return err
 	}
 
-	// TODO: Serialize row and write to the Row struct
-	*row = *rowToInsert
+	if node.node.NumCells() >= bptree.LeafNodeMaxCells {
+		return ErrTableFull
+	}
+
+	rowToInsert := stmt.RowToInsert
+	cursor := TableEnd(table)
+
+	err = cursor.leafNodeInsert(uint64(rowToInsert.Id), rowToInsert)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
