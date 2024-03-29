@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -90,16 +91,14 @@ func PrepareStmt(input string) (stmt Stmt, err error) {
 	return Stmt{}, ErrUnknownStmt
 }
 
-func (row *Row) Serialize() (b []byte, err error) {
-	buf := bytes.Buffer{}
-	enc := gob.NewEncoder(&buf)
-	err = enc.Encode(row)
-	return buf.Bytes(), err
+func (row *Row) Serialize(w io.Writer) error {
+	enc := gob.NewEncoder(w)
+	return enc.Encode(row)
 }
 
-func Deserialize(b []byte) (Row, error) {
+func Deserialize(r io.Reader) (Row, error) {
 	row := Row{}
-	dec := gob.NewDecoder(bytes.NewReader(b))
+	dec := gob.NewDecoder(r)
 	err := dec.Decode(&row)
 	return row, err
 }
