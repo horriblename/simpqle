@@ -3,12 +3,13 @@ package sql
 import (
 	"errors"
 	"fmt"
+
+	"github.com/horriblename/simpqle/sql/bptree"
 )
 
 type Table struct {
-	NumRows     uint64
-	RootPageNum uint64
 	pager       *Pager
+	RootPageNum uint64
 }
 
 var ErrTableFull = errors.New("table is full")
@@ -24,8 +25,6 @@ func (table *Table) ExecuteInsert(stmt *Stmt) error {
 
 	// TODO: Serialize row and write to the Row struct
 	*row = *rowToInsert
-
-	table.NumRows += 1
 
 	return nil
 }
@@ -66,11 +65,19 @@ func DbOpen(fname string) (*Table, error) {
 	if err != nil {
 		return nil, err
 	}
-	numRows := pager.fileLen / gRowSize
 
 	table := &Table{}
 	table.pager = pager
-	table.NumRows = numRows
+	table.RootPageNum = tmpRootPageNum
+
+	if pager.numPages == 0 {
+		// New database file. Initialize page 0 as leaf node
+		rootNode, err := pager.getPage(0)
+		if err != nil {
+			return nil, err
+		}
+		rootNode.node = bptree.NewRootNode[uint64, Row]()
+	}
 
 	return table, nil
 }

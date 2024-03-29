@@ -1,7 +1,6 @@
 package sql
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -48,11 +47,6 @@ func (pager *Pager) getPage(pageNum uint64) (*tmpTableNode, error) {
 	}
 
 	if pager.pages[pageNum] == nil {
-		if pageNum == tmpRootPageNum {
-			rootNode := bptree.NewRootNode[uint64, Row]()
-			pager.pages[pageNum] = &tmpTableNode{node: rootNode}
-			return pager.pages[pageNum], nil
-		}
 		// Cache miss. allocate memory and load from file
 		var page bptree.Node[uint64, Row]
 		numPages := pager.fileLen / gPageSize
@@ -82,7 +76,8 @@ func (pager *Pager) getPage(pageNum uint64) (*tmpTableNode, error) {
 
 // flushes the selected page in memory into the database file
 func (pager *Pager) flush(pageNum uint64) error {
-	if pager.pages[pageNum] == nil {
+	page := pager.pages[pageNum]
+	if page == nil {
 		return errors.New("Tried to flush null page")
 	}
 
@@ -91,20 +86,10 @@ func (pager *Pager) flush(pageNum uint64) error {
 		return fmt.Errorf("Error seeking: %s", err)
 	}
 
-	err = serializePage((*tmpTableNode)(pager.pages[pageNum]), pager.file)
+	err = page.node.SerializeBinary(pager.file)
 	if err != nil {
 		return fmt.Errorf("Error writing: %s", err)
 	}
 
 	return nil
-}
-
-func serializePage(node *tmpTableNode, w io.Writer) error {
-	return binary.Write(w, binary.BigEndian, node)
-}
-
-func deserializePage(r io.Reader) (tmpTableNode, error) {
-	node := tmpTableNode{}
-	err := binary.Read(r, binary.BigEndian, &node)
-	return node, err
 }
