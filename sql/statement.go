@@ -1,8 +1,7 @@
 package sql
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -92,14 +91,12 @@ func PrepareStmt(input string) (stmt Stmt, err error) {
 }
 
 func (row *Row) Serialize(w io.Writer) error {
-	enc := gob.NewEncoder(w)
-	return enc.Encode(row)
+	return binary.Write(w, binary.BigEndian, row)
 }
 
 func Deserialize(r io.Reader) (Row, error) {
 	row := Row{}
-	dec := gob.NewDecoder(r)
-	err := dec.Decode(&row)
+	err := binary.Read(r, binary.BigEndian, &row)
 	return row, err
 }
 
