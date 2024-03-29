@@ -20,10 +20,14 @@ func TestSerialize(t *testing.T) {
 		Parent: 0,
 		Variant: &LeafNode[k, v]{
 			NumCells: 0,
-			Key:      0,
-			Value: v{
-				Name: [25]byte{'T', 'o', 'm'},
-				Age:  12,
+			Pairs: [LeafNodeMaxCells]KVPair[k, v]{
+				{
+					Key: 0,
+					Value: v{
+						Name: [25]byte{'T', 'o', 'm'},
+						Age:  12,
+					},
+				},
 			},
 		},
 	}

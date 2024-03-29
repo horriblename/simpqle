@@ -46,11 +46,15 @@ type Node[K comparable, V any] struct {
 func (_ *LeafNode[K, V]) node()     {}
 func (_ *InternalNode[K, V]) node() {}
 
+type KVPair[K any, V any] struct {
+	Key   K
+	Value V
+}
+
 type LeafNode[K comparable, V any] struct {
 	NumCells uint64
 
-	Key   K
-	Value V
+	Pairs [LeafNodeMaxCells]KVPair[K, V]
 }
 
 type InternalNode[K comparable, V any] struct {
@@ -64,4 +68,12 @@ func NewRootNode[K comparable, V any]() Node[K, V] {
 			NumCells: gNodeNumCells,
 		},
 	}
+}
+
+func (leaf *LeafNode[K, V]) LeafNodeCell(cellNum uint64) *V {
+	if len(leaf.Pairs) <= int(cellNum) {
+		panic("cellNum out of range")
+	}
+
+	return &leaf.Pairs[cellNum].Value
 }

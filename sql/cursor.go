@@ -92,7 +92,8 @@ func (cursor *Cursor) Value() (*Row, error) {
 		return nil, err
 	}
 
-	return (*Row)(&leaf.Value), nil
+	// TODO: which value?
+	return leaf.LeafNodeCell(0), nil
 }
 
 func asLeaf(variant bptree.NodeVariant) (*bptree.LeafNode[uint64, Row], error) {
