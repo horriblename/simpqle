@@ -20,75 +20,51 @@ const (
 	internalVariant
 )
 
-func (node *Node[K, V]) SerializeBinary(w io.Writer) error {
-	err := binary.Write(w, binary.BigEndian, node.IsRoot)
-	if err != nil {
-		return err
-	}
-	err = binary.Write(w, binary.BigEndian, node.Parent)
+func (node *LeafNode[K, V]) SerializeBinary(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, leafVariant)
 	if err != nil {
 		return err
 	}
 
-	switch variant := node.Variant.(type) {
-	case *LeafNode[K, V]:
-		err = binary.Write(w, binary.BigEndian, leafVariant)
-		if err != nil {
-			return err
-		}
+	return binary.Write(w, binary.BigEndian, node.inner)
+}
 
-		err = binary.Write(w, binary.BigEndian, variant)
-		if err != nil {
-			return err
-		}
-
-	case *InternalNode[K, V]:
-		panic("unimplemented: serialize internal node")
-
-	case nil:
-		return ErrNilVariant
-
-	default:
-		return ErrUnknownVariant
+func (node *InternalNode[K, V]) SerializeBinary(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, internalVariant)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	return binary.Write(w, binary.BigEndian, node)
 }
 
 func DeserializeBinary[K comparable, V any](r io.Reader) (Node[K, V], error) {
-	node := Node[K, V]{}
-	err := binary.Read(r, binary.BigEndian, &node.IsRoot)
-	if err != nil {
-		return node, err
-	}
-
-	err = binary.Read(r, binary.BigEndian, &node.Parent)
-	if err != nil {
-		return node, err
-	}
-
 	var variant variantTag
-	err = binary.Read(r, binary.BigEndian, &variant)
+	err := binary.Read(r, binary.BigEndian, &variant)
 	if err != nil {
-		return node, err
+		return nil, err
 	}
 
 	switch variant {
 	case leafVariant:
 		var leaf LeafNode[K, V]
-		err = binary.Read(r, binary.BigEndian, &leaf)
+		err = binary.Read(r, binary.BigEndian, &leaf.inner)
 		if err != nil {
-			return node, err
+			return nil, err
 		}
 
-		node.Variant = &leaf
+		return &leaf, nil
 
 	case internalVariant:
-		panic("unimplemented: deserialize internal node")
+		var internalNode InternalNode[K, V]
+		err = binary.Read(r, binary.BigEndian, &internalNode.inner)
+		if err != nil {
+			return nil, err
+		}
+
+		return &internalNode, nil
 
 	default:
-		return node, ErrUnknownVariantTag
+		return nil, ErrUnknownVariantTag
 	}
-
-	return node, nil
 }

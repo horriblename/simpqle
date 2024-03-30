@@ -33,18 +33,18 @@ const (
 )
 
 const (
-	LeafNodeMaxCells = uint64(3)
+	LeafNodeMaxCells = 3
 )
 
-type NodeVariant interface{ node() }
-type Node[K comparable, V any] struct {
-	IsRoot  bool
-	Parent  int64 // page number
-	Variant NodeVariant
+type Node[K comparable, V any] interface {
+	IsRoot() bool
+	Parent() int64 // page number
 }
 
-func (_ *LeafNode[K, V]) node()     {}
-func (_ *InternalNode[K, V]) node() {}
+func (leaf *LeafNode[K, V]) IsRoot() bool   { return leaf.inner.IsRoot }
+func (leaf *LeafNode[K, V]) Parent() int64  { return leaf.inner.Parent }
+func (_ *InternalNode[K, V]) IsRoot() bool  { panic("unimplemented") }
+func (_ *InternalNode[K, V]) Parent() int64 { panic("unimplemented") }
 
 type KVPair[K any, V any] struct {
 	Key   K
@@ -52,52 +52,61 @@ type KVPair[K any, V any] struct {
 }
 
 type LeafNode[K comparable, V any] struct {
-	NumCells uint64
+	inner innerLeafNode[K, V]
+}
+
+type innerLeafNode[K comparable, V any] struct {
+	IsRoot   bool
+	Parent   int64
+	NumCells int
 
 	Pairs [LeafNodeMaxCells]KVPair[K, V]
 }
 
 type InternalNode[K comparable, V any] struct {
+	inner innerInternalNode[K, V]
 }
+
+type innerInternalNode[K comparable, V any] struct{}
 
 func NewRootNode[K comparable, V any]() Node[K, V] {
-	return Node[K, V]{
-		IsRoot: true,
-		Parent: 0,
-		Variant: &LeafNode[K, V]{
-			NumCells: LeafNodeMaxCells,
-		},
-	}
+	return &LeafNode[K, V]{innerLeafNode[K, V]{
+		IsRoot:   true,
+		Parent:   0,
+		NumCells: 0,
+		Pairs:    [LeafNodeMaxCells]KVPair[K, V]{},
+	}}
 }
 
-func (node *Node[K, V]) NumCells() uint64 {
-	switch variant := node.Variant.(type) {
-	case *LeafNode[K, V]:
-		return variant.NumCells
-	case *InternalNode[K, V]:
-		panic("unimplemented: NumCells for internal node")
-	default:
-		panic(ErrUnknownVariant)
-	}
-}
-
-func (leaf *LeafNode[K, V]) LeafNodeCell(cellNum uint64) *V {
-	if len(leaf.Pairs) <= int(cellNum) {
+func (leaf *LeafNode[K, V]) LeafNodeCell(cellNum int) *V {
+	if len(leaf.inner.Pairs) <= cellNum {
 		panic("cellNum out of range")
 	}
 
-	return &leaf.Pairs[cellNum].Value
+	return &leaf.inner.Pairs[cellNum].Value
 }
 
 func (leaf *LeafNode[K, V]) Insert(cellNum int, key K, value V) error {
-	// if cellNum <  {
-	// 	cell := KVPair[K, V]{
-	// 		Key:   key,
-	// 		Value: value,
-	// 	}
-	// 	slices.Insert(leaf.Pairs[:], cellNum, cell)
-	// 	return
-	// }
-	panic("unimplemented")
+	if cellNum >= LeafNodeMaxCells {
+		// TODO:
+		panic("insert out of range: cellNum >= LeafNodeMaxCells")
+	}
 
+	cell := KVPair[K, V]{
+		Key:   key,
+		Value: value,
+	}
+
+	if cellNum < leaf.inner.NumCells {
+		for i := leaf.inner.NumCells; i > cellNum; i-- {
+			leaf.inner.Pairs[i] = leaf.inner.Pairs[i-1]
+		}
+		leaf.inner.Pairs[cellNum] = cell
+		leaf.inner.NumCells += 1
+		return nil
+	}
+
+	leaf.inner.Pairs[cellNum] = cell
+	leaf.inner.NumCells += 1
+	return nil
 }
