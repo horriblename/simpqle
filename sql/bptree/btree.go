@@ -44,6 +44,7 @@ type Node[K comparable, V any] interface {
 	NumCells() uint64
 
 	SerializeBinary(w io.Writer) error
+	Visualize() string
 }
 
 func (leaf *LeafNode[K, V]) IsRoot() bool      { return leaf.inner.IsRoot }
