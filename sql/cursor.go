@@ -37,12 +37,7 @@ func TableStart(table *Table) (*Cursor, error) {
 		return nil, err
 	}
 
-	leaf, err := asLeaf(rootNode.node.Variant)
-	if err != nil {
-		return nil, err
-	}
-
-	numCells := leaf.NumCells
+	numCells := rootNode.node.NumCells()
 
 	return &Cursor{
 		table:      table,
@@ -67,13 +62,9 @@ func (cursor *Cursor) Advance() error {
 	if err != nil {
 		return err
 	}
-	leaf, err := asLeaf(page.node.Variant)
-	if err != nil {
-		return err
-	}
 
 	cursor.cellNum += 1
-	if cursor.cellNum >= leaf.NumCells {
+	if cursor.cellNum >= page.node.NumCells() {
 		cursor.endOfTable = true
 	}
 
@@ -87,9 +78,9 @@ func (cursor *Cursor) Value() (*Row, error) {
 		return nil, err
 	}
 
-	leaf, err := asLeaf(page.node.Variant)
-	if err != nil {
-		return nil, err
+	leaf, ok := page.node.(*bptree.LeafNode[uint64, Row])
+	if !ok {
+		panic("TODO: Value on non-leaf")
 	}
 
 	// TODO: which value?
@@ -108,28 +99,16 @@ func (cursor *Cursor) leafNodeInsert(key uint64, value *Row) error {
 		panic("unimplemented: leaf node full")
 	}
 
-	leaf, err := asLeaf(node.node.Variant)
-	if err != nil {
-		return err
+	leaf, ok := node.node.(*bptree.LeafNode[uint64, Row])
+	if !ok {
+		panic("TODO: handle error")
 	}
 
-	leaf.Insert(int(cursor.cellNum), key, *value)
+	leaf.Insert(uint64(cursor.cellNum), key, *value)
 	cursor.cellNum += 1
 
 	node.node.SerializeBinary(cursor.table.pager.file)
 	return nil
-}
-
-func asLeaf(variant bptree.NodeVariant) (*bptree.LeafNode[uint64, Row], error) {
-	if variant == nil {
-		return nil, bptree.ErrNilVariant
-	}
-
-	if leaf, ok := variant.(*bptree.LeafNode[uint64, Row]); ok {
-		return leaf, nil
-	}
-
-	return nil, errWrongVariant
 }
 
 func panicCast[T any](x any) *T {

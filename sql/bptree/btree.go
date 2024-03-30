@@ -25,6 +25,8 @@
 
 package bptree
 
+import "io"
+
 type NodeType int
 
 const (
@@ -39,12 +41,17 @@ const (
 type Node[K comparable, V any] interface {
 	IsRoot() bool
 	Parent() int64 // page number
+	NumCells() uint64
+
+	SerializeBinary(w io.Writer) error
 }
 
-func (leaf *LeafNode[K, V]) IsRoot() bool   { return leaf.inner.IsRoot }
-func (leaf *LeafNode[K, V]) Parent() int64  { return leaf.inner.Parent }
-func (_ *InternalNode[K, V]) IsRoot() bool  { panic("unimplemented") }
-func (_ *InternalNode[K, V]) Parent() int64 { panic("unimplemented") }
+func (leaf *LeafNode[K, V]) IsRoot() bool      { return leaf.inner.IsRoot }
+func (leaf *LeafNode[K, V]) Parent() int64     { return leaf.inner.Parent }
+func (leaf *LeafNode[K, V]) NumCells() uint64  { return leaf.inner.NumCells }
+func (_ *InternalNode[K, V]) IsRoot() bool     { panic("unimplemented") }
+func (_ *InternalNode[K, V]) Parent() int64    { panic("unimplemented") }
+func (_ *InternalNode[K, V]) NumCells() uint64 { panic("unimplemented") }
 
 type KVPair[K any, V any] struct {
 	Key   K
@@ -58,7 +65,7 @@ type LeafNode[K comparable, V any] struct {
 type innerLeafNode[K comparable, V any] struct {
 	IsRoot   bool
 	Parent   int64
-	NumCells int64
+	NumCells uint64
 
 	Pairs [LeafNodeMaxCells]KVPair[K, V]
 }
@@ -86,7 +93,7 @@ func (leaf *LeafNode[K, V]) LeafNodeCell(cellNum int) *V {
 	return &leaf.inner.Pairs[cellNum].Value
 }
 
-func (leaf *LeafNode[K, V]) Insert(cellNum int64, key K, value V) error {
+func (leaf *LeafNode[K, V]) Insert(cellNum uint64, key K, value V) error {
 	if cellNum >= LeafNodeMaxCells {
 		// TODO:
 		panic("insert out of range: cellNum >= LeafNodeMaxCells")
