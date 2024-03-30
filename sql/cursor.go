@@ -1,8 +1,6 @@
 package sql
 
 import (
-	"errors"
-
 	"github.com/horriblename/simpqle/sql/bptree"
 )
 
@@ -12,10 +10,6 @@ type Cursor struct {
 	cellNum    uint64
 	endOfTable bool
 }
-
-var (
-	errWrongVariant error = errors.New("wrong variant")
-)
 
 func assert(err error) {
 	if err != nil {
