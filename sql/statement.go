@@ -14,7 +14,7 @@ type Stmt struct {
 }
 
 type Row struct {
-	Id       int64
+	Id       uint64
 	Username colUsername
 	Email    colEmail
 }
@@ -50,7 +50,7 @@ func PrepareStmt(input string) (stmt Stmt, err error) {
 		var usernameStr, emailStr string
 		var username colUsername
 		var email colEmail
-		var id int64
+		var id uint64
 		parsed, err := fmt.Sscanf(input, "insert %d %s %s", &id, &usernameStr, &emailStr)
 
 		if len(username) < len(usernameStr) {

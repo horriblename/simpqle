@@ -12,21 +12,40 @@ type Table struct {
 	RootPageNum uint64
 }
 
-var ErrTableFull = errors.New("table is full")
+var (
+	ErrTableFull          = errors.New("table is full")
+	ErrInsertDuplicateKey = errors.New("attempt to insert duplicate key")
+)
 
 func (table *Table) ExecuteInsert(stmt *Stmt) error {
-	// FIXME: single node tree
-	node, err := table.pager.getPage(table.RootPageNum)
+	// FIXME: single page tree
+	page, err := table.pager.getPage(table.RootPageNum)
 	if err != nil {
 		return err
 	}
 
-	if node.node.NumCells() >= bptree.LeafNodeMaxCells {
+	if page.node.NumCells() >= bptree.LeafNodeMaxCells {
 		return ErrTableFull
 	}
 
 	rowToInsert := stmt.RowToInsert
-	cursor := TableEnd(table)
+	keyToInsert := rowToInsert.Id
+	cursor, err := TableFind(table, keyToInsert)
+	if err != nil {
+		return err
+	}
+
+	if cursor.cellNum < page.node.NumCells() {
+		leaf, ok := page.node.(*bptree.LeafNode[uint64, Row])
+		if !ok {
+			panic("TODO: handle non leaf node")
+		}
+
+		keyAtIndex := leaf.KeyAtCell(int(cursor.cellNum))
+		if keyAtIndex == uint64(keyToInsert) {
+			return ErrInsertDuplicateKey
+		}
+	}
 
 	err = cursor.leafNodeInsert(uint64(rowToInsert.Id), rowToInsert)
 	if err != nil {
@@ -115,4 +134,8 @@ func (table *Table) Close() error {
 	}
 	pager = nil
 	return nil
+}
+
+func (table *Table) Find(key int64) *Cursor {
+	panic("TODO")
 }

@@ -15,6 +15,8 @@ type tmpTableNode struct {
 	node bptree.Node[uint64, Row]
 }
 
+const gBinarySearchMinItems = 5
+
 func TableStart(table *Table) (*Cursor, error) {
 	rootNode, err := table.pager.getPage(table.RootPageNum)
 	if err != nil {
@@ -30,14 +32,6 @@ func TableStart(table *Table) (*Cursor, error) {
 		endOfTable: numCells == 0,
 	}, nil
 
-}
-
-func TableEnd(table *Table) *Cursor {
-	return &Cursor{
-		table:      table,
-		pageNum:    table.RootPageNum,
-		endOfTable: true,
-	}
 }
 
 func (cursor *Cursor) Advance() error {
@@ -92,4 +86,43 @@ func (cursor *Cursor) leafNodeInsert(key uint64, value *Row) error {
 	cursor.cellNum += 1
 
 	return node.node.SerializeBinary(cursor.table.pager.file)
+}
+
+func TableFind(table *Table, key uint64) (*Cursor, error) {
+	rootPageNum := table.RootPageNum
+	rootNode, err := table.pager.getPage(rootPageNum)
+	if err != nil {
+		return nil, err
+	}
+
+	if leaf, ok := rootNode.node.(*bptree.LeafNode[uint64, Row]); ok {
+		return leafNodeFind(table, rootPageNum, leaf, key), nil
+	} else {
+		panic("TODO: search internal node")
+	}
+}
+
+func leafNodeFind(table *Table, pageNum uint64, leaf *bptree.LeafNode[uint64, Row], key uint64) *Cursor {
+	cells := leaf.Cells()
+	numCells := leaf.NumCells()
+	cursor := Cursor{
+		table:      table,
+		pageNum:    pageNum,
+		cellNum:    0,
+		endOfTable: false,
+	}
+
+	if numCells < gBinarySearchMinItems {
+		i := 0
+		for i = 0; i < len(cells); i += 1 {
+			if cells[i].Key >= key {
+				break
+			}
+		}
+
+		cursor.cellNum = uint64(i)
+		return &cursor
+	}
+
+	panic("TODO: binary search for leaf node")
 }
