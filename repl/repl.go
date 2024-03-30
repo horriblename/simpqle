@@ -41,30 +41,26 @@ func Start(dbFilePath string) {
 
 		input := scanner.Text()
 
-		if input == ".exit" {
-			return
-		}
-
 		if len(input) >= 1 && input[0] == '.' {
-			handleCmd(input)
-		} else {
-			stmt, err := sql.PrepareStmt(input)
-			if err != nil {
-				pErrorf("Error Parsing Statement: %s", err)
-				continue
-			}
+			if err := sql.DoMetaCommand(input, table); err != nil {
+				if err == sql.ExitCmd {
+					return
+				}
 
-			err = table.ExecuteStmt(&stmt)
-			if err != nil {
-				pErrorf("Error: %s", err)
+				pErrorf("%s", err)
 			}
+			continue
 		}
-	}
-}
 
-func handleCmd(cmd string) {
-	switch cmd {
-	default:
-		pErrorf("Unknown command: %s\n", cmd)
+		stmt, err := sql.PrepareStmt(input)
+		if err != nil {
+			pErrorf("Error Parsing Statement: %s", err)
+			continue
+		}
+
+		err = table.ExecuteStmt(&stmt)
+		if err != nil {
+			pErrorf("Error: %s", err)
+		}
 	}
 }
