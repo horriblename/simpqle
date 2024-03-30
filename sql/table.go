@@ -114,6 +114,5 @@ func (table *Table) Close() error {
 		}
 	}
 	pager = nil
-	table = nil
 	return nil
 }

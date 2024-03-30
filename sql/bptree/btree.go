@@ -115,5 +115,4 @@ func (leaf *LeafNode[K, V]) Insert(cellNum uint64, key K, value V) {
 
 	leaf.inner.Pairs[cellNum] = cell
 	leaf.inner.NumCells += 1
-	return
 }
