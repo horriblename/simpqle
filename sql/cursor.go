@@ -11,12 +11,6 @@ type Cursor struct {
 	endOfTable bool
 }
 
-func assert(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 type tmpTableNode struct {
 	node bptree.Node[uint64, Row]
 }
