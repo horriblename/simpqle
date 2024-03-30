@@ -93,7 +93,7 @@ func (leaf *LeafNode[K, V]) LeafNodeCell(cellNum int) *V {
 	return &leaf.inner.Pairs[cellNum].Value
 }
 
-func (leaf *LeafNode[K, V]) Insert(cellNum uint64, key K, value V) error {
+func (leaf *LeafNode[K, V]) Insert(cellNum uint64, key K, value V) {
 	if cellNum >= LeafNodeMaxCells {
 		// TODO:
 		panic("insert out of range: cellNum >= LeafNodeMaxCells")
@@ -110,10 +110,10 @@ func (leaf *LeafNode[K, V]) Insert(cellNum uint64, key K, value V) error {
 		}
 		leaf.inner.Pairs[cellNum] = cell
 		leaf.inner.NumCells += 1
-		return nil
+		return
 	}
 
 	leaf.inner.Pairs[cellNum] = cell
 	leaf.inner.NumCells += 1
-	return nil
+	return
 }

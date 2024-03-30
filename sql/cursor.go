@@ -107,8 +107,7 @@ func (cursor *Cursor) leafNodeInsert(key uint64, value *Row) error {
 	leaf.Insert(uint64(cursor.cellNum), key, *value)
 	cursor.cellNum += 1
 
-	node.node.SerializeBinary(cursor.table.pager.file)
-	return nil
+	return node.node.SerializeBinary(cursor.table.pager.file)
 }
 
 func panicCast[T any](x any) *T {

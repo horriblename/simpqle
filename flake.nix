@@ -29,7 +29,7 @@
       pkgs = pkgsFor.${system};
     in {
       default = pkgs.mkShell {
-        nativeBuildInputs = with pkgs; [go];
+        nativeBuildInputs = with pkgs; [go golangci-lint];
       };
     });
   };
