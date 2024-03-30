@@ -2,8 +2,9 @@ package bptree
 
 import (
 	"bytes"
-	"github.com/go-test/deep"
 	"testing"
+
+	"github.com/go-test/deep"
 )
 
 type row struct {

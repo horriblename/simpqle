@@ -58,7 +58,7 @@ type LeafNode[K comparable, V any] struct {
 type innerLeafNode[K comparable, V any] struct {
 	IsRoot   bool
 	Parent   int64
-	NumCells int
+	NumCells int64
 
 	Pairs [LeafNodeMaxCells]KVPair[K, V]
 }
@@ -86,7 +86,7 @@ func (leaf *LeafNode[K, V]) LeafNodeCell(cellNum int) *V {
 	return &leaf.inner.Pairs[cellNum].Value
 }
 
-func (leaf *LeafNode[K, V]) Insert(cellNum int, key K, value V) error {
+func (leaf *LeafNode[K, V]) Insert(cellNum int64, key K, value V) error {
 	if cellNum >= LeafNodeMaxCells {
 		// TODO:
 		panic("insert out of range: cellNum >= LeafNodeMaxCells")
