@@ -93,11 +93,3 @@ func (cursor *Cursor) leafNodeInsert(key uint64, value *Row) error {
 
 	return node.node.SerializeBinary(cursor.table.pager.file)
 }
-
-func panicCast[T any](x any) *T {
-	if t, ok := x.(*T); ok {
-		return t
-	} else {
-		panic("bad cast")
-	}
-}
