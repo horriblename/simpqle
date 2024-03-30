@@ -13,15 +13,8 @@ var (
 	ErrUnknownVariantTag error = errors.New("found unrecognized variant tag during decoding")
 )
 
-type variantTag uint8
-
-const (
-	leafVariant variantTag = iota
-	internalVariant
-)
-
 func (node *LeafNode[K, V]) SerializeBinary(w io.Writer) error {
-	err := binary.Write(w, binary.BigEndian, leafVariant)
+	err := binary.Write(w, binary.BigEndian, Leaf)
 	if err != nil {
 		return err
 	}
@@ -30,7 +23,7 @@ func (node *LeafNode[K, V]) SerializeBinary(w io.Writer) error {
 }
 
 func (node *InternalNode[K, V]) SerializeBinary(w io.Writer) error {
-	err := binary.Write(w, binary.BigEndian, internalVariant)
+	err := binary.Write(w, binary.BigEndian, Internal)
 	if err != nil {
 		return err
 	}
@@ -39,14 +32,14 @@ func (node *InternalNode[K, V]) SerializeBinary(w io.Writer) error {
 }
 
 func DeserializeBinary[K comparable, V any](r io.Reader) (Node[K, V], error) {
-	var variant variantTag
+	var variant NodeType
 	err := binary.Read(r, binary.BigEndian, &variant)
 	if err != nil {
 		return nil, err
 	}
 
 	switch variant {
-	case leafVariant:
+	case Leaf:
 		var leaf LeafNode[K, V]
 		err = binary.Read(r, binary.BigEndian, &leaf.inner)
 		if err != nil {
@@ -55,7 +48,7 @@ func DeserializeBinary[K comparable, V any](r io.Reader) (Node[K, V], error) {
 
 		return &leaf, nil
 
-	case internalVariant:
+	case Internal:
 		var internalNode InternalNode[K, V]
 		err = binary.Read(r, binary.BigEndian, &internalNode.inner)
 		if err != nil {

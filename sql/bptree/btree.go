@@ -27,7 +27,7 @@ package bptree
 
 import "io"
 
-type NodeType int
+type NodeType int8
 
 const (
 	Internal NodeType = iota
@@ -42,6 +42,7 @@ type Node[K comparable, V any] interface {
 	IsRoot() bool
 	Parent() int64 // page number
 	NumCells() uint64
+	Kind() NodeType
 
 	SerializeBinary(w io.Writer) error
 	Visualize() string
@@ -50,9 +51,11 @@ type Node[K comparable, V any] interface {
 func (leaf *LeafNode[K, V]) IsRoot() bool      { return leaf.inner.IsRoot }
 func (leaf *LeafNode[K, V]) Parent() int64     { return leaf.inner.Parent }
 func (leaf *LeafNode[K, V]) NumCells() uint64  { return leaf.inner.NumCells }
+func (leaf *LeafNode[K, V]) Kind() NodeType    { return Leaf }
 func (_ *InternalNode[K, V]) IsRoot() bool     { panic("unimplemented") }
 func (_ *InternalNode[K, V]) Parent() int64    { panic("unimplemented") }
 func (_ *InternalNode[K, V]) NumCells() uint64 { panic("unimplemented") }
+func (_ *InternalNode[K, V]) Kind() NodeType   { return Internal }
 
 type KVPair[K any, V any] struct {
 	Key   K
@@ -92,6 +95,14 @@ func (leaf *LeafNode[K, V]) LeafNodeCell(cellNum int) *V {
 	}
 
 	return &leaf.inner.Pairs[cellNum].Value
+}
+
+func (leaf *LeafNode[K, V]) KeyAtCell(cellNum int) K {
+	if len(leaf.inner.Pairs) <= cellNum {
+		panic("cellNum out of range")
+	}
+
+	return leaf.inner.Pairs[cellNum].Key
 }
 
 func (leaf *LeafNode[K, V]) Insert(cellNum uint64, key K, value V) {
